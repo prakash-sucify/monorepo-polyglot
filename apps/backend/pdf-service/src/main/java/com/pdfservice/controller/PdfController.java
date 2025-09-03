@@ -18,6 +18,22 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class PdfController {
 
+    @GetMapping("/")
+    public ResponseEntity<Map<String, Object>> root() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "PDF Service API");
+        response.put("version", "1.0.0");
+        response.put("endpoints", new String[]{
+            "GET /health - Health check",
+            "POST /extract-text - Extract text from PDF",
+            "POST /get-info - Get PDF information",
+            "POST /merge - Merge multiple PDFs",
+            "POST /split - Split PDF pages",
+            "POST /add-watermark - Add watermark to PDF"
+        });
+        return ResponseEntity.ok(response);
+    }
+
     @Autowired
     private PdfService pdfService;
 

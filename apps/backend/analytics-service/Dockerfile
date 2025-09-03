@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.80-alpine AS builder
+FROM rust:1.85-alpine AS builder
 
 WORKDIR /app
 
@@ -7,13 +7,13 @@ WORKDIR /app
 RUN apk add --no-cache musl-dev
 
 # Copy Cargo files
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 
 # Copy source code
 COPY src ./src
 
-# Build the application
-RUN cargo build --release
+# Generate Cargo.lock and build the application
+RUN cargo generate-lockfile && cargo build --release
 
 # Runtime stage
 FROM alpine:latest

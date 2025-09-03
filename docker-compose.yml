@@ -1,22 +1,49 @@
 services:
+  # Nginx Reverse Proxy (Production only)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/ssl/certs:ro
+      - ./ssl:/etc/ssl/private:ro
+    depends_on:
+      - web
+      - admin
+      - auth-service
+      - payment-service
+      - analytics-service
+      - ai-service
+      - pdf-service
+    restart: unless-stopped
+    profiles:
+      - production
+
   # Frontend - Web App
   web:
     build:
       context: .
       dockerfile: apps/frontend/web/Dockerfile
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     environment:
-      - NODE_ENV=development
-    volumes:
-      - ./apps/frontend/web:/app
-      - /app/node_modules
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_WEB_APP_URL=${NEXT_PUBLIC_WEB_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=${NEXT_PUBLIC_AUTH_SERVICE_URL:-http://localhost:3002}
+      - NEXT_PUBLIC_PAYMENT_SERVICE_URL=${NEXT_PUBLIC_PAYMENT_SERVICE_URL:-http://localhost:8080}
+      - NEXT_PUBLIC_ANALYTICS_SERVICE_URL=${NEXT_PUBLIC_ANALYTICS_SERVICE_URL:-http://localhost:8081}
+      - NEXT_PUBLIC_AI_SERVICE_URL=${NEXT_PUBLIC_AI_SERVICE_URL:-http://localhost:8082}
+      - NEXT_PUBLIC_PDF_SERVICE_URL=${NEXT_PUBLIC_PDF_SERVICE_URL:-http://localhost:8083}
     depends_on:
       - auth-service
       - payment-service
       - analytics-service
       - ai-service
       - pdf-service
+    restart: unless-stopped
 
   # Frontend - Admin Panel
   admin:
@@ -24,18 +51,22 @@ services:
       context: .
       dockerfile: apps/frontend/admin/Dockerfile
     ports:
-      - "3001:3001"
+      - "${ADMIN_PORT:-3001}:3001"
     environment:
-      - NODE_ENV=development
-    volumes:
-      - ./apps/frontend/admin:/app
-      - /app/node_modules
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_ADMIN_APP_URL=${NEXT_PUBLIC_ADMIN_APP_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=${NEXT_PUBLIC_AUTH_SERVICE_URL:-http://localhost:3002}
+      - NEXT_PUBLIC_PAYMENT_SERVICE_URL=${NEXT_PUBLIC_PAYMENT_SERVICE_URL:-http://localhost:8080}
+      - NEXT_PUBLIC_ANALYTICS_SERVICE_URL=${NEXT_PUBLIC_ANALYTICS_SERVICE_URL:-http://localhost:8081}
+      - NEXT_PUBLIC_AI_SERVICE_URL=${NEXT_PUBLIC_AI_SERVICE_URL:-http://localhost:8082}
+      - NEXT_PUBLIC_PDF_SERVICE_URL=${NEXT_PUBLIC_PDF_SERVICE_URL:-http://localhost:8083}
     depends_on:
       - auth-service
       - payment-service
       - analytics-service
       - ai-service
       - pdf-service
+    restart: unless-stopped
 
   # Auth Service - Node.js/Express
   auth-service:
@@ -43,19 +74,21 @@ services:
       context: .
       dockerfile: apps/backend/auth-service/Dockerfile
     ports:
-      - "3002:3002"
+      - "${AUTH_PORT:-3002}:3002"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3002
-      - JWT_SECRET=your_jwt_secret_here
-      - DATABASE_URL=postgresql://user:password@postgres:5432/auth_db
-      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-dev_jwt_secret_key_change_in_production}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://user:password@postgres:5432/auth_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000,http://localhost:3001}
     volumes:
       - ./apps/backend/auth-service:/app
       - /app/node_modules
     depends_on:
       - postgres
       - redis
+    restart: unless-stopped
 
   # Payment Service - Go
   payment-service:
@@ -63,13 +96,14 @@ services:
       context: ./apps/backend/payment-service
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${PAYMENT_PORT:-8080}:8080"
     environment:
       - PORT=8080
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
     volumes:
       - ./apps/backend/payment-service:/app
+    restart: unless-stopped
 
   # Analytics Service - Rust
   analytics-service:
@@ -77,11 +111,12 @@ services:
       context: ./apps/backend/analytics-service
       dockerfile: Dockerfile
     ports:
-      - "8081:8081"
+      - "${ANALYTICS_PORT:-8081}:8081"
     environment:
       - PORT=8081
     volumes:
       - ./apps/backend/analytics-service:/app
+    restart: unless-stopped
 
   # AI Service - Python/FastAPI
   ai-service:
@@ -89,12 +124,13 @@ services:
       context: ./apps/backend/ai-service
       dockerfile: Dockerfile
     ports:
-      - "8082:8082"
+      - "${AI_PORT:-8082}:8082"
     environment:
       - PORT=8082
       - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-placeholder}
     volumes:
       - ./apps/backend/ai-service:/app
+    restart: unless-stopped
 
   # PDF Service - Java/Spring Boot
   pdf-service:
@@ -102,31 +138,32 @@ services:
       context: ./apps/backend/pdf-service
       dockerfile: Dockerfile
     ports:
-      - "8083:8083"
+      - "${PDF_PORT:-8083}:8083"
     environment:
       - SERVER_PORT=8083
-    volumes:
-      - ./apps/backend/pdf-service:/app
+    restart: unless-stopped
 
-  # PostgreSQL Database (using different port to avoid conflicts)
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     environment:
-      - POSTGRES_DB=auth_db
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=${POSTGRES_DB:-auth_db}
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
-  # Redis for caching (using different port to avoid conflicts)
+  # Redis for caching
   redis:
     image: redis:7-alpine
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
+    restart: unless-stopped
 
 volumes:
   postgres_data:

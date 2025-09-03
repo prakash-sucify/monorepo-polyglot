@@ -200,3 +200,39 @@ dist
 # Temporary folders
 tmp/
 temp/
+
+# SSL Certificates and Keys
+ssl/
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+
+# SSL Backup
+ssl-backup/
+
+# Docker volumes and data
+docker-data/
+postgres-data/
+redis-data/
+
+# Environment and secrets
+.env.production
+.env.staging
+secrets/
+*.secret
+*.private
+
+# Logs and monitoring
+logs/
+*.log
+monitoring/
+
+# Backup files
+*.backup
+*.bak
+backup/

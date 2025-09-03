@@ -2,24 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files from root
-COPY package.json pnpm-lock.yaml ./
-COPY nx.json ./
-COPY tsconfig.base.json ./
+# Copy package files
+COPY apps/backend/auth-service/package.json ./
 
-# Install pnpm and dependencies
-RUN npm install -g pnpm
-RUN pnpm install
+# Install dependencies
+RUN npm install
 
 # Copy source code
-COPY apps/backend/auth-service/ ./apps/backend/auth-service/
-COPY libs ./libs
-
-# Build the application
-RUN npx nx build auth-service
+COPY apps/backend/auth-service/src ./src
 
 # Expose port
 EXPOSE 3002
 
-# Start the application
-CMD ["node", "dist/auth-service/main.js"]
+# Start the application with ts-node
+CMD ["npx", "ts-node", "src/main.ts"]

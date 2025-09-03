@@ -48,6 +48,19 @@ func main() {
 		c.Next()
 	})
 
+	// Root endpoint
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Payment Service API",
+			"version": "1.0.0",
+			"endpoints": []string{
+				"GET /health - Health check",
+				"POST /payment/create - Create payment intent",
+				"GET /payment/:id - Get payment status",
+			},
+		})
+	})
+
 	// Health check endpoint
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

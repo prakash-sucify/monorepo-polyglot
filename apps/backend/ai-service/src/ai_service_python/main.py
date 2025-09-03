@@ -70,6 +70,21 @@ class SummarizationResponse(BaseModel):
     original_length: int
     summary_length: int
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "AI Service API",
+        "version": "1.0.0",
+        "endpoints": [
+            "GET /health - Health check",
+            "POST /chat - Chat with AI",
+            "POST /generate - Generate text",
+            "POST /summarize - Summarize text",
+            "GET /models - List available models"
+        ]
+    }
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

@@ -1,0 +1,53 @@
+{
+  "version": "6.0",
+  "nxVersion": "21.4.1",
+  "pathMappings": {},
+  "nxJsonPlugins": [],
+  "fileMap": {
+    "projectFileMap": {
+      "auth-service": [
+        {
+          "file": ".eslintrc.json",
+          "hash": "3893004944901185440"
+        },
+        {
+          "file": "Dockerfile",
+          "hash": "5023461617799284152"
+        },
+        {
+          "file": "eslint.config.mjs",
+          "hash": "9036454466467975933"
+        },
+        {
+          "file": "jest.config.ts",
+          "hash": "7161005819022033757"
+        },
+        {
+          "file": "pnpm-lock.yaml",
+          "hash": "7135859219847473770"
+        },
+        {
+          "file": "project.json",
+          "hash": "732981290628954758"
+        },
+        {
+          "file": "src/main.ts",
+          "hash": "3964993889269490132"
+        },
+        {
+          "file": "tsconfig.app.json",
+          "hash": "12357036456775091951"
+        },
+        {
+          "file": "tsconfig.json",
+          "hash": "14785519187273610601"
+        },
+        {
+          "file": "tsconfig.spec.json",
+          "hash": "5394994266788668641"
+        }
+      ]
+    },
+    "nonProjectFiles": []
+  }
+}
