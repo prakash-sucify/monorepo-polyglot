@@ -1,0 +1,137 @@
+# Team-specific Docker Compose files
+# Copy this to your team workspace and customize
+
+version: '3.8'
+
+services:
+  # Frontend Team Services
+  web:
+    build:
+      context: .
+      dockerfile: apps/frontend/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/frontend/web:/app/apps/frontend/web
+      - /app/node_modules
+    profiles:
+      - frontend
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/frontend/admin/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/frontend/admin:/app/apps/frontend/admin
+      - /app/node_modules
+    profiles:
+      - frontend
+
+  # Backend Team Services
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/backend/auth-service/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - JWT_SECRET=local_jwt_secret_for_development
+      - DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/monorepo_dev
+      - REDIS_URL=redis://host.docker.internal:6379
+    volumes:
+      - ./apps/backend/auth-service:/app/apps/backend/auth-service
+      - /app/node_modules
+    profiles:
+      - backend
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: apps/backend/payment-service/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - STRIPE_SECRET_KEY=sk_test_placeholder
+      - STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+    volumes:
+      - ./apps/backend/payment-service:/app
+    profiles:
+      - backend
+
+  pdf-service:
+    build:
+      context: .
+      dockerfile: apps/backend/pdf-service/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVER_PORT=8083
+    volumes:
+      - ./apps/backend/pdf-service:/app
+    profiles:
+      - backend
+
+  # Data Team Services
+  analytics-service:
+    build:
+      context: .
+      dockerfile: apps/backend/analytics-service/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+    volumes:
+      - ./apps/backend/analytics-service:/app
+    profiles:
+      - data
+
+  # AI Team Services
+  ai-service:
+    build:
+      context: .
+      dockerfile: apps/backend/ai-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - OPENAI_API_KEY=sk-placeholder
+    volumes:
+      - ./apps/backend/ai-service:/app
+    profiles:
+      - ai
+
+  # Shared Services
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=auth_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    profiles:
+      - shared
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    profiles:
+      - shared
+
+volumes:
+  postgres_data:
+  redis_data:

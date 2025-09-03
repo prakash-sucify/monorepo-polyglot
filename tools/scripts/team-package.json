@@ -1,0 +1,21 @@
+{
+  "name": "@monorepo-polyglot/team-workspace",
+  "version": "1.0.0",
+  "description": "Team-specific workspace configuration",
+  "scripts": {
+    "setup": "pnpm install && pnpm build:libs",
+    "build:libs": "npx nx build-many --projects=tag:scope:shared",
+    "test:libs": "npx nx test-many --projects=tag:scope:shared",
+    "lint:libs": "npx nx lint-many --projects=tag:scope:shared",
+    "clean": "npx nx reset && rm -rf node_modules dist coverage",
+    "update": "git pull origin main && pnpm install",
+    "sparse:add": "git sparse-checkout add",
+    "sparse:remove": "git sparse-checkout remove",
+    "sparse:list": "git sparse-checkout list",
+    "sparse:reapply": "git sparse-checkout reapply"
+  },
+  "devDependencies": {
+    "nx": "^17.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: monorepo-gateway
+  namespace: monorepo-polyglot
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.monorepo-polyglot.local"
+    - "monorepo-polyglot.local"
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: monorepo-tls
+    hosts:
+    - "*.monorepo-polyglot.local"
+    - "monorepo-polyglot.local"

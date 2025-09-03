@@ -1,0 +1,28 @@
+{
+  "extends": ["../../.eslintrc.json"],
+  "rules": {
+    "@monorepo-polyglot/project-boundaries": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["apps/backend/*"],
+                "message": "Frontend projects cannot import from backend services. Use the API client instead."
+              },
+              {
+                "group": ["apps/frontend/admin"],
+                "message": "Web app cannot import from admin panel. Keep them separate."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

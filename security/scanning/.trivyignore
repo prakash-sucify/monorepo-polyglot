@@ -1,0 +1,21 @@
+# Trivy Ignore File
+# Add vulnerabilities to ignore here
+
+# Example format:
+# CVE-2023-1234
+# CVE-2023-5678
+
+# Node.js vulnerabilities (if using specific versions)
+# CVE-2023-30581
+
+# Python vulnerabilities (if using specific versions)
+# CVE-2023-41105
+
+# Go vulnerabilities (if using specific versions)
+# CVE-2023-39325
+
+# Java vulnerabilities (if using specific versions)
+# CVE-2023-45853
+
+# Rust vulnerabilities (if using specific versions)
+# CVE-2023-45853

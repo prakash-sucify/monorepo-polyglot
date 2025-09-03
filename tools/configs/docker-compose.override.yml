@@ -1,0 +1,93 @@
+# Docker Compose Override for Development
+# This file extends the base docker-compose.yml for development
+
+version: '3.8'
+
+services:
+  # Development overrides for all services
+  web:
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3002
+      - NEXT_PUBLIC_PAYMENT_SERVICE_URL=http://localhost:8080
+      - NEXT_PUBLIC_ANALYTICS_SERVICE_URL=http://localhost:8081
+      - NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:8082
+      - NEXT_PUBLIC_PDF_SERVICE_URL=http://localhost:8083
+    volumes:
+      - ./apps/frontend/web:/app
+      - /app/node_modules
+      - /app/.next
+
+  admin:
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3002
+      - NEXT_PUBLIC_PAYMENT_SERVICE_URL=http://localhost:8080
+      - NEXT_PUBLIC_ANALYTICS_SERVICE_URL=http://localhost:8081
+      - NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:8082
+      - NEXT_PUBLIC_PDF_SERVICE_URL=http://localhost:8083
+    volumes:
+      - ./apps/frontend/admin:/app
+      - /app/node_modules
+      - /app/.next
+
+  auth-service:
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - JWT_SECRET=dev_jwt_secret_key
+      - DATABASE_URL=postgresql://user:password@postgres:5432/auth_db
+      - LOG_LEVEL=debug
+    volumes:
+      - ./apps/backend/auth-service:/app
+      - /app/node_modules
+
+  payment-service:
+    environment:
+      - PORT=8080
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_development_key}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_development_key}
+      - LOG_LEVEL=debug
+    volumes:
+      - ./apps/backend/payment-service:/app
+
+  analytics-service:
+    environment:
+      - PORT=8081
+      - LOG_LEVEL=debug
+    volumes:
+      - ./apps/backend/analytics-service:/app
+
+  ai-service:
+    environment:
+      - PORT=8082
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-development-key}
+      - LOG_LEVEL=debug
+    volumes:
+      - ./apps/backend/ai-service:/app
+
+  pdf-service:
+    environment:
+      - PORT=8083
+      - LOG_LEVEL=debug
+    volumes:
+      - ./apps/backend/pdf-service:/app
+
+  # Development database
+  postgres:
+    environment:
+      - POSTGRES_DB=auth_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./tools/configs/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Development Redis
+  redis:
+    volumes:
+      - redis_dev_data:/data
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

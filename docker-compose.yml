@@ -1,0 +1,133 @@
+services:
+  # Frontend - Web App
+  web:
+    build:
+      context: .
+      dockerfile: apps/frontend/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/frontend/web:/app
+      - /app/node_modules
+    depends_on:
+      - auth-service
+      - payment-service
+      - analytics-service
+      - ai-service
+      - pdf-service
+
+  # Frontend - Admin Panel
+  admin:
+    build:
+      context: .
+      dockerfile: apps/frontend/admin/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/frontend/admin:/app
+      - /app/node_modules
+    depends_on:
+      - auth-service
+      - payment-service
+      - analytics-service
+      - ai-service
+      - pdf-service
+
+  # Auth Service - Node.js/Express
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/backend/auth-service/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - JWT_SECRET=your_jwt_secret_here
+      - DATABASE_URL=postgresql://user:password@postgres:5432/auth_db
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./apps/backend/auth-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+
+  # Payment Service - Go
+  payment-service:
+    build:
+      context: ./apps/backend/payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
+    volumes:
+      - ./apps/backend/payment-service:/app
+
+  # Analytics Service - Rust
+  analytics-service:
+    build:
+      context: ./apps/backend/analytics-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+    volumes:
+      - ./apps/backend/analytics-service:/app
+
+  # AI Service - Python/FastAPI
+  ai-service:
+    build:
+      context: ./apps/backend/ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-placeholder}
+    volumes:
+      - ./apps/backend/ai-service:/app
+
+  # PDF Service - Java/Spring Boot
+  pdf-service:
+    build:
+      context: ./apps/backend/pdf-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVER_PORT=8083
+    volumes:
+      - ./apps/backend/pdf-service:/app
+
+  # PostgreSQL Database (using different port to avoid conflicts)
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=auth_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis for caching (using different port to avoid conflicts)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,28 @@
+{
+  "extends": ["../../.eslintrc.json"],
+  "rules": {
+    "@monorepo-polyglot/project-boundaries": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["apps/frontend/*"],
+                "message": "Backend services cannot import from frontend applications. Use shared libraries instead."
+              },
+              {
+                "group": ["apps/backend/payment-service", "apps/backend/analytics-service", "apps/backend/ai-service", "apps/backend/pdf-service"],
+                "message": "Services cannot directly import from other services. Use API calls or shared libraries."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: monorepo-polyglot
+  labels:
+    app: kong
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+    spec:
+      containers:
+      - name: kong
+        image: kong:3.4
+        env:
+        - name: KONG_DATABASE
+          value: "off"
+        - name: KONG_DECLARATIVE_CONFIG
+          value: "/kong/kong.yml"
+        - name: KONG_PROXY_ACCESS_LOG
+          value: "/dev/stdout"
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: "/dev/stdout"
+        - name: KONG_PROXY_ERROR_LOG
+          value: "/dev/stderr"
+        - name: KONG_ADMIN_ERROR_LOG
+          value: "/dev/stderr"
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001"
+        - name: KONG_ADMIN_GUI_URL
+          value: "http://kong-admin.monorepo-polyglot.local:8002"
+        ports:
+        - containerPort: 8000
+          name: proxy
+        - containerPort: 8001
+          name: admin
+        - containerPort: 8002
+          name: admin-gui
+        volumeMounts:
+        - name: kong-config
+          mountPath: /kong
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: kong-config
+        configMap:
+          name: kong-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-proxy
+  namespace: monorepo-polyglot
+  labels:
+    app: kong
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: proxy
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+    name: admin
+  - port: 8002
+    targetPort: 8002
+    protocol: TCP
+    name: admin-gui
+  selector:
+    app: kong
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-admin
+  namespace: monorepo-polyglot
+  labels:
+    app: kong
+spec:
+  ports:
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+    name: admin
+  - port: 8002
+    targetPort: 8002
+    protocol: TCP
+    name: admin-gui
+  selector:
+    app: kong

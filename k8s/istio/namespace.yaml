@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monorepo-polyglot
+  labels:
+    name: monorepo-polyglot
+    istio-injection: enabled

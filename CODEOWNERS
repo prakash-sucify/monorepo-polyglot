@@ -1,0 +1,39 @@
+# Global owners
+* @monorepo-polyglot/platform-team
+
+# Frontend Team
+apps/frontend/ @monorepo-polyglot/frontend-team
+libs/ui-components/ @monorepo-polyglot/frontend-team
+
+# Backend Team
+apps/backend/auth-service/ @monorepo-polyglot/backend-team
+apps/backend/payment-service/ @monorepo-polyglot/backend-team
+apps/backend/pdf-service/ @monorepo-polyglot/backend-team
+
+# Data Team
+apps/backend/analytics-service/ @monorepo-polyglot/data-team
+
+# AI Team
+apps/backend/ai-service/ @monorepo-polyglot/ai-team
+
+# Platform Team
+libs/api-client/ @monorepo-polyglot/platform-team
+libs/validation/ @monorepo-polyglot/platform-team
+libs/constants/ @monorepo-polyglot/platform-team
+libs/utils/ @monorepo-polyglot/platform-team
+libs/resilience/ @monorepo-polyglot/platform-team
+libs/boundaries/ @monorepo-polyglot/platform-team
+tools/ @monorepo-polyglot/platform-team
+k8s/ @monorepo-polyglot/platform-team
+monitoring/ @monorepo-polyglot/platform-team
+security/ @monorepo-polyglot/platform-team
+
+# DevOps Team
+.github/ @monorepo-polyglot/devops-team
+docker-compose.yml @monorepo-polyglot/devops-team
+Dockerfile* @monorepo-polyglot/devops-team
+
+# Configuration files (require platform team approval)
+nx.json @monorepo-polyglot/platform-team
+package.json @monorepo-polyglot/platform-team
+tsconfig.base.json @monorepo-polyglot/platform-team

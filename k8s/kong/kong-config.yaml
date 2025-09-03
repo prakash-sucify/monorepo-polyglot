@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+  namespace: monorepo-polyglot
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    
+    services:
+    # Auth Service
+    - name: auth-service
+      url: http://auth-service:3002
+      routes:
+      - name: auth-route
+        paths:
+        - /api/auth
+        methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        plugins:
+        - name: rate-limiting
+          config:
+            minute: 100
+            hour: 1000
+        - name: cors
+          config:
+            origins:
+            - "*"
+            methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+            headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            credentials: true
+            max_age: 3600
+    
+    # Payment Service
+    - name: payment-service
+      url: http://payment-service:8080
+      routes:
+      - name: payment-route
+        paths:
+        - /api/payment
+        methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        plugins:
+        - name: rate-limiting
+          config:
+            minute: 50
+            hour: 500
+        - name: request-size-limiting
+          config:
+            allowed_payload_size: 1024
+    
+    # Analytics Service
+    - name: analytics-service
+      url: http://analytics-service:8081
+      routes:
+      - name: analytics-route
+        paths:
+        - /api/analytics
+        methods:
+        - GET
+        - POST
+        plugins:
+        - name: rate-limiting
+          config:
+            minute: 200
+            hour: 2000
+    
+    # AI Service
+    - name: ai-service
+      url: http://ai-service:8082
+      routes:
+      - name: ai-route
+        paths:
+        - /api/ai
+        methods:
+        - GET
+        - POST
+        plugins:
+        - name: rate-limiting
+          config:
+            minute: 20
+            hour: 200
+        - name: request-size-limiting
+          config:
+            allowed_payload_size: 10240
+        - name: response-transformer
+          config:
+            add:
+              headers:
+              - "X-Service: AI"
+    
+    # PDF Service
+    - name: pdf-service
+      url: http://pdf-service:8083
+      routes:
+      - name: pdf-route
+        paths:
+        - /api/pdf
+        methods:
+        - GET
+        - POST
+        plugins:
+        - name: rate-limiting
+          config:
+            minute: 30
+            hour: 300
+        - name: request-size-limiting
+          config:
+            allowed_payload_size: 51200
+    
+    # Frontend Services
+    - name: web-service
+      url: http://web-service:3000
+      routes:
+      - name: web-route
+        paths:
+        - /
+        methods:
+        - GET
+        - POST
+        plugins:
+        - name: cors
+          config:
+            origins:
+            - "*"
+            methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+            credentials: true
+    
+    - name: admin-service
+      url: http://admin-service:3001
+      routes:
+      - name: admin-route
+        paths:
+        - /admin
+        methods:
+        - GET
+        - POST
+        plugins:
+        - name: cors
+          config:
+            origins:
+            - "*"
+            methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+            credentials: true

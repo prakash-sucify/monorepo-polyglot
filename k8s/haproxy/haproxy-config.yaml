@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-config
+  namespace: monorepo-polyglot
+data:
+  haproxy.cfg: |
+    global
+        daemon
+        log stdout local0
+        chroot /var/lib/haproxy
+        stats socket /run/haproxy/admin.sock mode 660 level admin
+        stats timeout 30s
+        user haproxy
+        group haproxy
+        ca-base /etc/ssl/certs
+        crt-base /etc/ssl/private
+        ssl-default-bind-ciphers ECDHE+AESGCM:ECDHE+CHACHA20:RSA+AESGCM:RSA+CHACHA20:!aNULL:!MD5:!DSS
+        ssl-default-bind-options ssl-min-ver TLSv1.2 no-tls-tickets
+
+    defaults
+        mode http
+        log global
+        option httplog
+        option dontlognull
+        option log-health-checks
+        option forwardfor
+        option redispatch
+        retries 3
+        timeout http-request 10s
+        timeout queue 20s
+        timeout connect 10s
+        timeout client 1m
+        timeout server 1m
+        timeout http-keep-alive 10s
+        timeout check 10s
+        maxconn 3000
+
+    # Frontend for external traffic
+    frontend monorepo_frontend
+        bind *:80
+        bind *:443 ssl crt /etc/ssl/certs/monorepo.pem
+        redirect scheme https if !{ ssl_fc }
+        
+        # Rate limiting
+        stick-table type ip size 100k expire 30s store http_req_rate(10s)
+        http-request track-sc0 src
+        http-request deny if { sc_http_req_rate(0) gt 100 }
+        
+        # Security headers
+        http-response set-header X-Frame-Options DENY
+        http-response set-header X-Content-Type-Options nosniff
+        http-response set-header X-XSS-Protection "1; mode=block"
+        http-response set-header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        
+        # Routing rules
+        acl is_web hdr(host) -i web.monorepo-polyglot.local
+        acl is_admin hdr(host) -i admin.monorepo-polyglot.local
+        acl is_api_auth path_beg /api/auth
+        acl is_api_payment path_beg /api/payment
+        acl is_api_analytics path_beg /api/analytics
+        acl is_api_ai path_beg /api/ai
+        acl is_api_pdf path_beg /api/pdf
+        
+        use_backend web_backend if is_web
+        use_backend admin_backend if is_admin
+        use_backend auth_backend if is_api_auth
+        use_backend payment_backend if is_api_payment
+        use_backend analytics_backend if is_api_analytics
+        use_backend ai_backend if is_api_ai
+        use_backend pdf_backend if is_api_pdf
+        
+        default_backend web_backend
+
+    # Web App Backend
+    backend web_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server web1 web-service:3000 check inter 5s rise 2 fall 3
+        server web2 web-service:3000 check inter 5s rise 2 fall 3 backup
+
+    # Admin Panel Backend
+    backend admin_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server admin1 admin-service:3001 check inter 5s rise 2 fall 3
+
+    # Auth Service Backend
+    backend auth_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server auth1 auth-service:3002 check inter 5s rise 2 fall 3
+        server auth2 auth-service:3002 check inter 5s rise 2 fall 3 backup
+
+    # Payment Service Backend
+    backend payment_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server payment1 payment-service:8080 check inter 5s rise 2 fall 3
+        server payment2 payment-service:8080 check inter 5s rise 2 fall 3 backup
+
+    # Analytics Service Backend
+    backend analytics_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server analytics1 analytics-service:8081 check inter 5s rise 2 fall 3
+        server analytics2 analytics-service:8081 check inter 5s rise 2 fall 3 backup
+
+    # AI Service Backend
+    backend ai_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server ai1 ai-service:8082 check inter 10s rise 2 fall 3
+        server ai2 ai-service:8082 check inter 10s rise 2 fall 3 backup
+
+    # PDF Service Backend
+    backend pdf_backend
+        balance roundrobin
+        option httpchk GET /health
+        http-check expect status 200
+        server pdf1 pdf-service:8083 check inter 5s rise 2 fall 3
+        server pdf2 pdf-service:8083 check inter 5s rise 2 fall 3 backup
+
+    # Statistics and monitoring
+    listen stats
+        bind *:8404
+        stats enable
+        stats uri /stats
+        stats refresh 30s
+        stats admin if TRUE

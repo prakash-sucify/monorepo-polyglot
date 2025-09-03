@@ -1,0 +1,102 @@
+groups:
+- name: monorepo-polyglot-alerts
+  rules:
+  # High CPU Usage
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage detected"
+      description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+  # High Memory Usage
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage detected"
+      description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+
+  # Service Down
+  - alert: ServiceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Service is down"
+      description: "{{ $labels.job }} service is down on {{ $labels.instance }}"
+
+  # High Error Rate
+  - alert: HighErrorRate
+    expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High error rate detected"
+      description: "Error rate is above 10% for {{ $labels.job }} service"
+
+  # High Response Time
+  - alert: HighResponseTime
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High response time detected"
+      description: "95th percentile response time is above 1 second for {{ $labels.job }} service"
+
+  # Database Connection Issues
+  - alert: DatabaseConnectionIssues
+    expr: postgres_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Database connection issues"
+      description: "PostgreSQL database is not accessible"
+
+  # Redis Connection Issues
+  - alert: RedisConnectionIssues
+    expr: redis_up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Redis connection issues"
+      description: "Redis cache is not accessible"
+
+  # Disk Space Low
+  - alert: DiskSpaceLow
+    expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Disk space is low"
+      description: "Disk space is below 10% on {{ $labels.instance }}"
+
+  # Pod Restarting
+  - alert: PodRestarting
+    expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Pod is restarting frequently"
+      description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting frequently"
+
+  # Out of Memory
+  - alert: OutOfMemory
+    expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container is running out of memory"
+      description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is using more than 90% of its memory limit"

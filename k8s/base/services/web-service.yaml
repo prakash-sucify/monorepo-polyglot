@@ -1,0 +1,161 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: admin
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3001
+    targetPort: 3001
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: admin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3002
+    targetPort: 3002
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: auth-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: payment-service
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: payment-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: analytics-service
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: analytics-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: ai-service
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8082
+    targetPort: 8082
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: ai-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: pdf-service
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: pdf-service
+---
+# Database Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app.kubernetes.io/name: postgres
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: monorepo-polyglot
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app.kubernetes.io/name: redis

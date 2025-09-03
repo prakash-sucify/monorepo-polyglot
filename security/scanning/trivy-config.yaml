@@ -1,0 +1,41 @@
+# Trivy Configuration for Security Scanning
+format: table
+severity: HIGH,CRITICAL
+exit-code: 1
+ignore-unfixed: false
+skip-dirs:
+  - node_modules
+  - .git
+  - dist
+  - build
+  - target
+  - __pycache__
+  - .pytest_cache
+  - .mvn
+  - .gradle
+
+# Ignore specific vulnerabilities
+ignorefile: .trivyignore
+
+# Output formats
+output: trivy-results.txt
+format: json
+output: trivy-results.json
+
+# Database scanning
+db-repository: ghcr.io/aquasecurity/trivy-db
+cache-dir: .trivy-cache
+
+# Skip files
+skip-files:
+  - "*.test.js"
+  - "*.spec.js"
+  - "*.test.ts"
+  - "*.spec.ts"
+  - "test_*.py"
+  - "*_test.go"
+  - "Test*.java"
+
+# Security scanning options
+security-checks: vuln,config,secret
+secret-config: security/scanning/secret-config.yaml
