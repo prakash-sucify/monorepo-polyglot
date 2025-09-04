@@ -20,6 +20,7 @@ spec:
       containers:
       - name: web
         image: monorepo-polyglot/web:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
         env:
@@ -41,16 +42,20 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /api/health
+            path: /
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /
             port: 3000
           initialDelaySeconds: 30
           periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
         volumeMounts:
         - name: uploads
           mountPath: /app/uploads
@@ -81,6 +86,7 @@ spec:
       containers:
       - name: admin
         image: monorepo-polyglot/admin:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 3001
         env:
@@ -102,14 +108,18 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /api/health
+            path: /
+            port: 3001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /
             port: 3001
           initialDelaySeconds: 30
           periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3001
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
       restartPolicy: Always

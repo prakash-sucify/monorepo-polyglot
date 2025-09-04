@@ -21,6 +21,7 @@ spec:
       containers:
       - name: payment-service
         image: monorepo-polyglot/payment-service:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
         env:
@@ -75,6 +76,7 @@ spec:
       containers:
       - name: analytics-service
         image: monorepo-polyglot/analytics-service:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8081
         env:
@@ -129,6 +131,7 @@ spec:
       containers:
       - name: ai-service
         image: monorepo-polyglot/ai-service:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8082
         env:
@@ -183,6 +186,7 @@ spec:
       containers:
       - name: pdf-service
         image: monorepo-polyglot/pdf-service:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8083
         env:
@@ -202,13 +206,13 @@ spec:
             cpu: "1000m"
         livenessProbe:
           httpGet:
-            path: /health
+            path: /api/pdf/health
             port: 8083
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /health
+            path: /api/pdf/health
             port: 8083
           initialDelaySeconds: 5
           periodSeconds: 5

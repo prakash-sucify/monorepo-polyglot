@@ -9,6 +9,10 @@ app.get('/', (req, res) => {
   res.send({ message: 'Hello API' });
 });
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', service: 'auth-service' });
+});
+
 app.listen(port, host, () => {
   console.log(`[ ready ] http://${host}:${port}`);
 });

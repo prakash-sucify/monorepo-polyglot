@@ -11,22 +11,66 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://yourdomain.com,https://admin.yourdomain.com"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://monorepo.sucify.com"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   tls:
   - hosts:
-    - yourdomain.com
-    - admin.yourdomain.com
-    - api.yourdomain.com
+    - monorepo.sucify.com
     secretName: monorepo-polyglot-tls
   rules:
-  # Web App
-  - host: yourdomain.com
+  # Single domain with path-based routing
+  - host: monorepo.sucify.com
     http:
       paths:
+      # Admin Panel
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-service
+            port:
+              number: 3001
+      # API Routes
+      - path: /api/auth(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 3002
+      - path: /api/payment(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 8080
+      - path: /api/analytics(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 8081
+      - path: /api/ai(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: ai-service
+            port:
+              number: 8082
+      - path: /api/pdf(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: pdf-service
+            port:
+              number: 8083
+      # Web App (catch-all)
       - path: /
         pathType: Prefix
         backend:
@@ -34,58 +78,3 @@ spec:
             name: web-service
             port:
               number: 3000
-  # Admin Panel
-  - host: admin.yourdomain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: admin-service
-            port:
-              number: 3001
-  # API Gateway
-  - host: api.yourdomain.com
-    http:
-      paths:
-      # Auth Service
-      - path: /auth
-        pathType: Prefix
-        backend:
-          service:
-            name: auth-service
-            port:
-              number: 3002
-      # Payment Service
-      - path: /payment
-        pathType: Prefix
-        backend:
-          service:
-            name: payment-service
-            port:
-              number: 8080
-      # Analytics Service
-      - path: /analytics
-        pathType: Prefix
-        backend:
-          service:
-            name: analytics-service
-            port:
-              number: 8081
-      # AI Service
-      - path: /ai
-        pathType: Prefix
-        backend:
-          service:
-            name: ai-service
-            port:
-              number: 8082
-      # PDF Service
-      - path: /pdf
-        pathType: Prefix
-        backend:
-          service:
-            name: pdf-service
-            port:
-              number: 8083
