@@ -16,8 +16,12 @@ RUN pnpm install
 COPY apps/frontend/admin ./apps/frontend/admin
 COPY libs ./libs
 
+# Build the admin application
+RUN pnpm build:frontend
+
 # Expose port
 EXPOSE 3001
 
-# Start the development server
-CMD ["pnpm", "dev:admin"]
+# Start the production server
+WORKDIR /app/dist/apps/frontend/admin
+CMD ["npx", "next", "start", "-p", "3001"]

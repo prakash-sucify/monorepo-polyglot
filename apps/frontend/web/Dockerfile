@@ -16,8 +16,12 @@ RUN pnpm install
 COPY apps/frontend/web ./apps/frontend/web
 COPY libs ./libs
 
+# Build the web application
+RUN pnpm build:frontend
+
 # Expose port
 EXPOSE 3000
 
-# Start the development server
-CMD ["pnpm", "dev:web"]
+# Start the production server
+WORKDIR /app/dist/apps/frontend/web
+CMD ["npx", "next", "start", "-p", "3000"]

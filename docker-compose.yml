@@ -3,13 +3,13 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
-      - "${NGINX_HTTPS_PORT:-443}:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./ssl:/etc/ssl/certs:ro
-      - ./ssl:/etc/ssl/private:ro
+      - ./nginx/ssl:/etc/ssl/certs:ro
+      - ./nginx/ssl:/etc/ssl/private:ro
     depends_on:
       - web
       - admin
@@ -19,8 +19,6 @@ services:
       - ai-service
       - pdf-service
     restart: unless-stopped
-    profiles:
-      - production
 
   # Frontend - Web App
   web:
