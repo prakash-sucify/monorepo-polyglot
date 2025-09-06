@@ -1,4 +1,5 @@
-FROM python:3.11-slim
+# Multi-stage build for optimized AI service
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -18,6 +19,20 @@ RUN uv pip install --system -e .
 
 # Copy source code
 COPY . .
+
+# Build the application using individual build command
+RUN uv build
+
+# Runtime stage
+FROM python:3.11-slim AS runner
+
+WORKDIR /app
+
+# Install uv
+RUN pip install uv
+
+# Copy the built application
+COPY --from=builder /app/dist ./dist
 
 # Expose port
 EXPOSE 8082

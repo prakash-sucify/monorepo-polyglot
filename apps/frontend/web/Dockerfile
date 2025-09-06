@@ -1,4 +1,5 @@
-FROM node:18-alpine
+# Multi-stage build for optimized web app
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -12,12 +13,25 @@ COPY tsconfig.base.json ./
 RUN npm install -g pnpm
 RUN pnpm install
 
-# Copy source code
+# Copy only web app and shared libraries
 COPY apps/frontend/web ./apps/frontend/web
 COPY libs ./libs
 
-# Build the web application
-RUN pnpm build:frontend
+# Build only the web application using individual build command
+RUN pnpm build:web
+
+# Production stage
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+# Install pnpm for production
+RUN npm install -g pnpm
+
+# Copy only the built application and necessary files
+COPY --from=builder /app/dist/apps/frontend/web ./dist/apps/frontend/web
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
 
 # Expose port
 EXPOSE 3000
