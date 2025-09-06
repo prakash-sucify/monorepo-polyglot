@@ -73,6 +73,18 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
+    },
+    "build": {
+      "cache": true
+    },
+    "test": {
+      "cache": true
+    },
+    "lint": {
+      "cache": true
+    },
+    "e2e": {
+      "cache": true
     }
   },
   "implicitDependencies": {
@@ -80,20 +92,10 @@
     "nx.json": "*",
     "tsconfig.base.json": "*"
   },
-  "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx/tasks-runners/default",
-      "options": {
-        "cacheableOperations": ["build", "test", "lint", "e2e"]
-      }
-    }
-  },
-  "affected": {
-    "defaultBase": "origin/main"
-  },
   "release": {
     "version": {
       "preVersionCommand": "npx nx run-many -t build --all"
     }
-  }
+  },
+  "defaultBase": "origin/main"
 }

@@ -1,0 +1,6 @@
+{
+  "name": "@monorepo-polyglot/eslint-rules",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs"
+}

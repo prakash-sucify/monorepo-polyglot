@@ -1,11 +1,14 @@
 {
-  "extends": ["../../.eslintrc.json"],
-  "rules": {
-    "@monorepo-polyglot/project-boundaries": "error"
-  },
+  "extends": ["../../../.eslintrc.json"],
+  "rules": {},
   "overrides": [
     {
       "files": ["**/*.ts"],
+      "parserOptions": {
+        "project": "../../../tsconfig.base.json",
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+      },
       "rules": {
         "no-restricted-imports": [
           "error",

@@ -1,7 +1,7 @@
 {
   "name": "api-client",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/shared/api-client/src",
+  "sourceRoot": "libs/api-client/src",
   "projectType": "library",
   "targets": {
     "build": {
@@ -19,7 +19,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/shared/api-client/**/*.ts"]
+        "lintFilePatterns": ["libs/api-client/**/*.ts"]
       }
     },
     "test": {

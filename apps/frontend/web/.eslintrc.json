@@ -1,8 +1,6 @@
 {
-  "extends": ["../../.eslintrc.json"],
-  "rules": {
-    "@monorepo-polyglot/project-boundaries": "error"
-  },
+  "extends": ["../../../.eslintrc.json"],
+  "rules": {},
   "overrides": [
     {
       "files": ["**/*.ts", "**/*.tsx"],

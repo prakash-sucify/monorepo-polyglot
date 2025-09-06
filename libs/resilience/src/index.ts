@@ -1,4 +1,4 @@
-import { CircuitBreaker, Retry, Timeout, Bulkhead } from 'resilience4js';
+import CircuitBreaker from 'opossum';
 
 export interface ResilienceConfig {
   circuitBreaker?: {
@@ -23,50 +23,121 @@ export interface ResilienceConfig {
 
 export class ResilienceManager {
   private circuitBreakers: Map<string, CircuitBreaker> = new Map();
-  private retries: Map<string, Retry> = new Map();
-  private timeouts: Map<string, Timeout> = new Map();
-  private bulkheads: Map<string, Bulkhead> = new Map();
+  private retryCounts: Map<string, number> = new Map();
+  private timeoutIds: Map<string, NodeJS.Timeout> = new Map();
+  private activeCalls: Map<string, number> = new Map();
 
   createCircuitBreaker(name: string, config: ResilienceConfig['circuitBreaker'] = {}) {
-    const circuitBreaker = new CircuitBreaker({
-      failureRateThreshold: config.failureRateThreshold || 50,
-      waitDurationInOpenState: config.waitDurationInOpenState || 60000,
-      slidingWindowSize: config.slidingWindowSize || 10,
-      minimumNumberOfCalls: config.minimumNumberOfCalls || 5,
-    });
+    const circuitBreaker = new CircuitBreaker(
+      async () => {},
+      {
+        errorThresholdPercentage: config.failureRateThreshold || 50,
+        resetTimeout: config.waitDurationInOpenState || 60000,
+        rollingCountTimeout: config.slidingWindowSize || 10000,
+        rollingCountBuckets: Math.ceil((config.slidingWindowSize || 10000) / 1000),
+        volumeThreshold: config.minimumNumberOfCalls || 5,
+      }
+    );
     
     this.circuitBreakers.set(name, circuitBreaker);
     return circuitBreaker;
   }
 
-  createRetry(name: string, config: ResilienceConfig['retry'] = {}) {
-    const retry = new Retry({
-      maxAttempts: config.maxAttempts || 3,
-      waitDuration: config.waitDuration || 1000,
-      retryExceptions: config.retryExceptions || ['Error'],
-    });
+  async executeWithRetry<T>(
+    name: string,
+    fn: () => Promise<T>,
+    config: ResilienceConfig['retry'] = {}
+  ): Promise<T> {
+    const maxAttempts = config.maxAttempts || 3;
+    const waitDuration = config.waitDuration || 1000;
+    const retryExceptions = config.retryExceptions || ['Error'];
+
+    let lastError: Error;
     
-    this.retries.set(name, retry);
-    return retry;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const result = await fn();
+        this.retryCounts.set(name, attempt - 1);
+        return result;
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt === maxAttempts) {
+          break;
+        }
+
+        const shouldRetry = retryExceptions.some(exception => 
+          error instanceof Error && error.constructor.name === exception
+        );
+
+        if (!shouldRetry) {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, waitDuration * attempt));
+      }
+    }
+
+    throw lastError!;
   }
 
-  createTimeout(name: string, config: ResilienceConfig['timeout'] = {}) {
-    const timeout = new Timeout({
-      duration: config.duration || 5000,
+  async executeWithTimeout<T>(
+    name: string,
+    fn: () => Promise<T>,
+    config: ResilienceConfig['timeout'] = {}
+  ): Promise<T> {
+    const duration = config.duration || 5000;
+
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Operation timed out after ${duration}ms`));
+      }, duration);
+
+      this.timeoutIds.set(name, timeoutId);
+
+      fn()
+        .then(result => {
+          clearTimeout(timeoutId);
+          this.timeoutIds.delete(name);
+          resolve(result);
+        })
+        .catch(error => {
+          clearTimeout(timeoutId);
+          this.timeoutIds.delete(name);
+          reject(error);
+        });
     });
-    
-    this.timeouts.set(name, timeout);
-    return timeout;
   }
 
-  createBulkhead(name: string, config: ResilienceConfig['bulkhead'] = {}) {
-    const bulkhead = new Bulkhead({
-      maxConcurrentCalls: config.maxConcurrentCalls || 25,
-      maxWaitDuration: config.maxWaitDuration || 0,
-    });
-    
-    this.bulkheads.set(name, bulkhead);
-    return bulkhead;
+  async executeWithBulkhead<T>(
+    name: string,
+    fn: () => Promise<T>,
+    config: ResilienceConfig['bulkhead'] = {}
+  ): Promise<T> {
+    const maxConcurrentCalls = config.maxConcurrentCalls || 25;
+    const maxWaitDuration = config.maxWaitDuration || 0;
+
+    const currentCalls = this.activeCalls.get(name) || 0;
+
+    if (currentCalls >= maxConcurrentCalls) {
+      if (maxWaitDuration > 0) {
+        await new Promise(resolve => setTimeout(resolve, maxWaitDuration));
+        if ((this.activeCalls.get(name) || 0) >= maxConcurrentCalls) {
+          throw new Error('Bulkhead: Maximum concurrent calls exceeded');
+        }
+      } else {
+        throw new Error('Bulkhead: Maximum concurrent calls exceeded');
+      }
+    }
+
+    this.activeCalls.set(name, currentCalls + 1);
+
+    try {
+      const result = await fn();
+      return result;
+    } finally {
+      this.activeCalls.set(name, (this.activeCalls.get(name) || 1) - 1);
+    }
   }
 
   async executeWithResilience<T>(
@@ -75,33 +146,42 @@ export class ResilienceManager {
     config: ResilienceConfig = {}
   ): Promise<T> {
     const circuitBreaker = this.circuitBreakers.get(name) || this.createCircuitBreaker(name, config.circuitBreaker);
-    const retry = this.retries.get(name) || this.createRetry(name, config.retry);
-    const timeout = this.timeouts.get(name) || this.createTimeout(name, config.timeout);
-    const bulkhead = this.bulkheads.get(name) || this.createBulkhead(name, config.bulkhead);
+    
+    const wrappedFn = async () => {
+      return this.executeWithBulkhead(name, fn, config.bulkhead);
+    };
 
-    return bulkhead.execute(() =>
-      timeout.execute(() =>
-        retry.execute(() =>
-          circuitBreaker.execute(fn)
-        )
-      )
-    );
+    const timeoutFn = async () => {
+      return this.executeWithTimeout(name, wrappedFn, config.timeout);
+    };
+
+    const retryFn = async () => {
+      return this.executeWithRetry(name, timeoutFn, config.retry);
+    };
+
+    return new Promise((resolve, reject) => {
+      circuitBreaker.fire(retryFn)
+        .then(resolve)
+        .catch(reject);
+    });
   }
 
   getMetrics(name: string) {
     const circuitBreaker = this.circuitBreakers.get(name);
-    const retry = this.retries.get(name);
-    const timeout = this.timeouts.get(name);
-    const bulkhead = this.bulkheads.get(name);
+    const retryCount = this.retryCounts.get(name) || 0;
+    const activeCalls = this.activeCalls.get(name) || 0;
 
     return {
       circuitBreaker: circuitBreaker ? {
-        state: circuitBreaker.getState(),
-        metrics: circuitBreaker.getMetrics(),
+        state: circuitBreaker.state,
+        stats: circuitBreaker.stats,
       } : null,
-      retry: retry ? retry.getMetrics() : null,
-      timeout: timeout ? timeout.getMetrics() : null,
-      bulkhead: bulkhead ? bulkhead.getMetrics() : null,
+      retry: {
+        attempts: retryCount,
+      },
+      bulkhead: {
+        activeCalls,
+      },
     };
   }
 }
@@ -115,7 +195,7 @@ export const resilienceConfigs = {
     circuitBreaker: {
       failureRateThreshold: 50,
       waitDurationInOpenState: 30000,
-      slidingWindowSize: 10,
+      slidingWindowSize: 10000,
       minimumNumberOfCalls: 5,
     },
     retry: {
@@ -133,7 +213,7 @@ export const resilienceConfigs = {
     circuitBreaker: {
       failureRateThreshold: 30,
       waitDurationInOpenState: 60000,
-      slidingWindowSize: 20,
+      slidingWindowSize: 20000,
       minimumNumberOfCalls: 10,
     },
     retry: {
@@ -151,7 +231,7 @@ export const resilienceConfigs = {
     circuitBreaker: {
       failureRateThreshold: 40,
       waitDurationInOpenState: 120000,
-      slidingWindowSize: 5,
+      slidingWindowSize: 5000,
       minimumNumberOfCalls: 3,
     },
     retry: {
@@ -169,7 +249,7 @@ export const resilienceConfigs = {
     circuitBreaker: {
       failureRateThreshold: 60,
       waitDurationInOpenState: 30000,
-      slidingWindowSize: 15,
+      slidingWindowSize: 15000,
       minimumNumberOfCalls: 5,
     },
     retry: {
@@ -187,7 +267,7 @@ export const resilienceConfigs = {
     circuitBreaker: {
       failureRateThreshold: 40,
       waitDurationInOpenState: 60000,
-      slidingWindowSize: 10,
+      slidingWindowSize: 10000,
       minimumNumberOfCalls: 5,
     },
     retry: {
